@@ -1,46 +1,597 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker | PKR</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker | PKR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f12;
+    --surface: #17171c;
+    --card: #1e1e26;
+    --card-hover: #23232c;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --text: #f0f0f4;
+    --muted: #888892;
+    --accent: #7c6aff;
+    --accent-dim: rgba(124,106,255,0.15);
+    --green: #2dd4a0;
+    --green-dim: rgba(45,212,160,0.12);
+    --red: #f5646c;
+    --red-dim: rgba(245,100,108,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    animation: slideDown 0.5s ease;
+  }
+  .header-label {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Balance card */
+  .balance-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 28px 24px;
+    margin-bottom: 16px;
+    text-align: center;
+    animation: slideDown 0.5s 0.05s ease both;
+  }
+  .balance-label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .balance-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 38px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    transition: color 0.3s, transform 0.2s;
+  }
+  .balance-amount.positive { color: var(--green); }
+  .balance-amount.negative { color: var(--red); }
+  .balance-amount.neutral  { color: var(--text); }
+
+  /* Summary row */
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+    animation: slideDown 0.5s 0.1s ease both;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .summary-icon {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .summary-icon.inc { background: var(--green-dim); color: var(--green); }
+  .summary-icon.exp { background: var(--red-dim); color: var(--red); }
+  .summary-info { min-width: 0; }
+  .summary-name {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .summary-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .summary-value.inc { color: var(--green); }
+  .summary-value.exp { color: var(--red); }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    animation: slideDown 0.5s 0.15s ease both;
+  }
+  .section-title {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .clear-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .clear-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+  /* Transaction list */
+  .list-wrap {
+    margin-bottom: 28px;
+    animation: slideDown 0.5s 0.2s ease both;
+  }
+  .list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .list::-webkit-scrollbar { width: 4px; }
+  .list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .list li {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    animation: itemIn 0.3s ease;
+  }
+  .list li:hover { background: var(--card-hover); border-color: var(--border-hover); }
+
+  @keyframes itemIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .list-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  li.plus .list-dot  { background: var(--green); }
+  li.minus .list-dot { background: var(--red); }
+
+  .list-desc {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .list-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  li.plus  .list-amount { color: var(--green); }
+  li.minus .list-amount { color: var(--red); }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .list li:hover .delete-btn { opacity: 1; }
+  .delete-btn:hover { color: var(--red); background: var(--red-dim); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 28px 0;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Form */
+  .form-section {
+    animation: slideDown 0.5s 0.25s ease both;
+  }
+  .form-title {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .form-row { display: flex; flex-direction: column; gap: 14px; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  .field input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input::placeholder { color: var(--muted); }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  /* Type toggle */
+  .type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+  .type-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+  .type-btn.active-inc { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .type-btn.active-exp { background: var(--red-dim);   border-color: var(--red);   color: var(--red);   }
+
+  .add-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .add-btn:hover   { opacity: 0.88; }
+  .add-btn:active  { transform: scale(0.98); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err  { border-color: var(--red); color: var(--red); }
+  .toast.ok   { border-color: var(--green); color: var(--green); }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Amount helper text */
+  .amount-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    font-style: italic;
+  }
+</style>
 </head>
 <body>
-    <div class="main-wrapper">
-        <div class="container">
-            <h2>Expense Tracker</h2>
-            <h4>Your Balance</h4>
-            <h1 id="balance">Rs. 0.00</h1>
-            
-            <div class="inc-exp-container">
-                <div>
-                    <h4>Income</h4>
-                    <p id="money-plus" class="money-plus">+Rs. 0.00</p>
-                </div>
-                <div>
-                    <h4>Expense</h4>
-                    <p id="money-minus" class="money-minus">-Rs. 0.00</p>
-                </div>
-            </div>
 
-            <h3>History <button onclick="clearAll()" class="clear-btn">Clear All</button></h3>
-            <ul id="list" class="list"></ul>
+<div class="shell">
 
-            <h3>Add New Transaction</h3>
-            <form id="form">
-                <div class="form-control">
-                    <label for="text">Description</label>
-                    <input type="text" id="text" placeholder="e.g., Salary, Food" required/>
-                </div>
-                <div class="form-control">
-                    <label for="amount">Amount (Negative for expense)</label>
-                    <input type="number" id="amount" placeholder="Enter amount" required> 
-                </div>
-                <button class="btn">Add Transaction</button>
-            </form>
-        </div>
+  <div class="header">
+    <p class="header-label">PKR</p>
+    <h1>Expense Tracker</h1>
+  </div>
+
+  <!-- Balance -->
+  <div class="balance-card">
+    <p class="balance-label">Current Balance</p>
+    <p class="balance-amount neutral" id="balance">Rs. 0.00</p>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card">
+      <div class="summary-icon inc">↑</div>
+      <div class="summary-info">
+        <p class="summary-name">Income</p>
+        <p class="summary-value inc" id="money-plus">Rs. 0.00</p>
+      </div>
     </div>
-    <script src="script.js"></script>
+    <div class="summary-card">
+      <div class="summary-icon exp">↓</div>
+      <div class="summary-info">
+        <p class="summary-name">Expenses</p>
+        <p class="summary-value exp" id="money-minus">Rs. 0.00</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="section-header">
+    <span class="section-title">History</span>
+    <button class="clear-btn" onclick="clearAll()">Clear all</button>
+  </div>
+  <div class="list-wrap">
+    <ul class="list" id="list"></ul>
+  </div>
+
+  <!-- Add transaction -->
+  <div class="form-section">
+    <p class="form-title">New Transaction</p>
+    <div class="form-card">
+      <div class="form-row">
+
+        <!-- Type toggle -->
+        <div>
+          <div class="type-toggle">
+            <button class="type-btn active-inc" id="inc-btn" onclick="setType('income')">+ Income</button>
+            <button class="type-btn"            id="exp-btn" onclick="setType('expense')">− Expense</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="text">Description</label>
+          <input type="text" id="text" placeholder="e.g. Salary, Groceries…" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <label for="amount">Amount (Rs.)</label>
+          <input type="number" id="amount" placeholder="0.00" min="0" step="0.01" autocomplete="off" />
+          <p class="amount-hint" id="amount-hint">Will be added as income</p>
+        </div>
+
+      </div>
+      <button class="add-btn" onclick="addTransaction()">Add Transaction</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let transactions = [];
+  let currentType = 'income';
+
+  try {
+    const stored = localStorage.getItem('pkr_transactions');
+    if (stored) transactions = JSON.parse(stored);
+    if (!Array.isArray(transactions)) transactions = [];
+  } catch(e) { transactions = []; }
+
+  function setType(type) {
+    currentType = type;
+    const incBtn = document.getElementById('inc-btn');
+    const expBtn = document.getElementById('exp-btn');
+    const hint   = document.getElementById('amount-hint');
+    if (type === 'income') {
+      incBtn.className = 'type-btn active-inc';
+      expBtn.className = 'type-btn';
+      hint.textContent = 'Will be added as income';
+    } else {
+      incBtn.className = 'type-btn';
+      expBtn.className = 'type-btn active-exp';
+      hint.textContent = 'Will be deducted as expense';
+    }
+  }
+
+  function fmt(n) {
+    return 'Rs. ' + Math.abs(n).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function addTransaction() {
+    const desc   = document.getElementById('text').value.trim();
+    const rawAmt = parseFloat(document.getElementById('amount').value);
+
+    if (!desc) { showToast('Please enter a description.', 'err'); return; }
+    if (!rawAmt || rawAmt <= 0 || isNaN(rawAmt)) { showToast('Please enter a valid positive amount.', 'err'); return; }
+
+    const amount = currentType === 'expense' ? -Math.abs(rawAmt) : Math.abs(rawAmt);
+
+    const transaction = {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      text: desc,
+      amount: amount
+    };
+
+    transactions.push(transaction);
+    save();
+    render();
+
+    document.getElementById('text').value   = '';
+    document.getElementById('amount').value = '';
+    showToast('Transaction added!', 'ok');
+  }
+
+  function removeTransaction(id) {
+    transactions = transactions.filter(t => t.id !== id);
+    save();
+    render();
+    showToast('Transaction removed.', '');
+  }
+
+  function clearAll() {
+    if (!transactions.length) return;
+    if (confirm('Delete all transactions? This cannot be undone.')) {
+      transactions = [];
+      save();
+      render();
+      showToast('All cleared.', '');
+    }
+  }
+
+  function save() {
+    try { localStorage.setItem('pkr_transactions', JSON.stringify(transactions)); } catch(e) {}
+  }
+
+  function render() {
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+
+    if (!transactions.length) {
+      list.innerHTML = '<li class="empty-state" style="list-style:none; border-radius:8px;">No transactions yet</li>';
+    } else {
+      [...transactions].reverse().forEach(t => {
+        const li = document.createElement('li');
+        li.className = t.amount >= 0 ? 'plus' : 'minus';
+
+        const dot = document.createElement('span');
+        dot.className = 'list-dot';
+
+        const desc = document.createElement('span');
+        desc.className = 'list-desc';
+        desc.title = t.text;
+        desc.textContent = t.text;
+
+        const amt = document.createElement('span');
+        amt.className = 'list-amount';
+        amt.textContent = (t.amount >= 0 ? '+' : '−') + fmt(t.amount);
+
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.innerHTML = '&times;';
+        del.title = 'Delete';
+        del.setAttribute('aria-label', 'Delete transaction');
+        del.onclick = () => removeTransaction(t.id);
+
+        li.append(dot, desc, amt, del);
+        list.appendChild(li);
+      });
+    }
+
+    updateSummary();
+  }
+
+  function updateSummary() {
+    const amounts = transactions.map(t => t.amount);
+    const total   = amounts.reduce((a, b) => a + b, 0);
+    const income  = amounts.filter(a => a > 0).reduce((a, b) => a + b, 0);
+    const expense = amounts.filter(a => a < 0).reduce((a, b) => a + b, 0);
+
+    const balEl = document.getElementById('balance');
+    balEl.textContent = (total < 0 ? '−' : '') + fmt(total);
+    balEl.className = 'balance-amount ' + (total > 0 ? 'positive' : total < 0 ? 'negative' : 'neutral');
+
+    document.getElementById('money-plus').textContent  = '+' + fmt(income);
+    document.getElementById('money-minus').textContent = '−' + fmt(expense);
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // Allow pressing Enter in inputs
+  document.getElementById('text').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('amount').focus(); });
+  document.getElementById('amount').addEventListener('keydown', e => { if (e.key === 'Enter') addTransaction(); });
+
+  render();
+</script>
 </body>
-</html> 
+</html>
